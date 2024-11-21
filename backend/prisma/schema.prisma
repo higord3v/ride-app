@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model EstimatedRides {
+  id Int @default(autoincrement()) @id
+  customer  Customer @relation(fields: [customerId], references: [id])
+  customerId Int
+  originLat Float
+  destinationLat Float
+  originLng Float
+  destinationLng Float
+  distance Int
+  duration Int
+}
+
+model Ride {
+  id Int @default(autoincrement()) @id
+  customer  Customer @relation(fields: [customerId], references: [id])
+  customerId Int
+  origin String
+  driver Driver @relation(fields: [driverId], references: [id])
+  driverId Int
+  destination String
+  originLat Float
+  destinationLat Float
+  originLng Float
+  destinationLng Float
+  distance Int
+  duration Int
+  date DateTime
+  cost Int
+}
+
+model Customer {
+  id    Int     @default(autoincrement()) @id
+  estimatedRides   EstimatedRides[]
+  rides   Ride[]
+}
+
+model Driver {
+  id Int @default(autoincrement()) @id
+  description String
+  car String
+  rating String
+  price Int
+  minDistance Int
+  rides Ride[]
+}
