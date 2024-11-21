@@ -1,8 +1,9 @@
 import { Body, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Client } from "@googlemaps/google-maps-services-js";
-import { EstimatedRideResponseDTO } from 'src/dto/EstimatedRideResponseDTO';
+import { EstimatedRideResponseDTO } from 'src/dto/EstimateRideResponseDTO';
 import { EstimateRideRequestDTO } from 'src/dto/EstimateRideRequestDTO';
+import { ConfirmRideRequestDTO } from 'src/dto/ConfirmRideRequestDTO';
 
 @Injectable()
 export class RideService {
@@ -47,6 +48,25 @@ export class RideService {
         },
       });
 
+      const drivers = await this.prisma.driver.findMany({
+        where: {
+          minDistance: {
+            lte: estimatedRide.distance,
+          },
+        },
+        });
+      const options = drivers.map((driver) => ({
+        id: driver.id,
+        name: driver.name,
+        description: driver.description,
+        vehicle: driver.car,
+        review: {
+          rating: driver.rating,
+          comment: driver.description,
+        },
+        value: driver.price * estimatedRide.distance,
+      }));
+
       return {
         distance: estimatedRide.distance,
         duration: response.data.routes[0].legs[0].duration.text,
@@ -58,11 +78,21 @@ export class RideService {
           latitude: estimatedRide.destinationLat,
           longitude: estimatedRide.destinationLng,
         },
-        options: [],
+        options: options,
         routeResponse: response.data
       }
     } catch (error) {
-      return error.data;
+      return error.response.data;
+    }
+  }
+
+  async confirmRide(@Body() confirmRideDTO: ConfirmRideRequestDTO): Promise<boolean> {
+    try {
+      
+      
+      return false;
+    } catch (error) {
+      return error
     }
   }
 }

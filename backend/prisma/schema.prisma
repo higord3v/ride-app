@@ -13,40 +13,24 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model EstimatedRides {
-  id Int @default(autoincrement()) @id
-  customer  Customer @relation(fields: [customerId], references: [id])
-  customerId Int
-  originLat Float
-  destinationLat Float
-  originLng Float
-  destinationLng Float
-  distance Int
-  duration Int
-}
-
 model Ride {
   id Int @default(autoincrement()) @id
   customer  Customer @relation(fields: [customerId], references: [id])
   customerId Int
-  origin String
-  driver Driver @relation(fields: [driverId], references: [id])
-  driverId Int
-  destination String
   originLat Float
   destinationLat Float
   originLng Float
   destinationLng Float
   distance Int
   duration Int
-  date DateTime
-  cost Int
+  confirmed Boolean @default(false)
+  driver Driver @relation(fields: [driverId], references: [id])
+  driverId Int
 }
 
 model Customer {
   id    Int     @default(autoincrement()) @id
-  estimatedRides   EstimatedRides[]
-  rides   Ride[]
+  estimatedRides   Ride[]
 }
 
 model Driver {

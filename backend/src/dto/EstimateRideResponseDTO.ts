@@ -21,7 +21,7 @@ interface rideOption {
     description: string,
     vehicle: string,
     review: {
-        rating: number,
+        rating: string,
         comment: string
     },
     value: number
