@@ -38,6 +38,7 @@ CREATE TABLE "Customer" (
 -- CreateTable
 CREATE TABLE "Driver" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "name" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "car" TEXT NOT NULL,
     "rating" TEXT NOT NULL,

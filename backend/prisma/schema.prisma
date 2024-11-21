@@ -51,6 +51,7 @@ model Customer {
 
 model Driver {
   id Int @default(autoincrement()) @id
+  name String
   description String
   car String
   rating String
