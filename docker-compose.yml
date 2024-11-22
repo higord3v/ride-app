@@ -7,14 +7,14 @@ services:
     networks:
       - app-network
     volumes:
-    - .env:/app/.env # Copy the .env file into the container
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #   ports:
-  #     - "8080:3000" 
-  #   networks:
-  #     - app-network
+    - .env:/app/.env
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "8080:3000" 
+    networks:
+      - app-network
 networks:
   app-network:
     driver: bridge

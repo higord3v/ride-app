@@ -7,10 +7,9 @@ RUN npm install
 
 COPY . .
 
-RUN npm run build
+RUN npx prisma generate &&npm run build
 
 EXPOSE 3000
 
-RUN npx prisma migrate dev --name init && npx prisma db seed
 
 CMD ["npm", "run", "start:prod"]
