@@ -1,9 +1,10 @@
-import { Body, Injectable } from '@nestjs/common';
+import { Body, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Client } from "@googlemaps/google-maps-services-js";
 import { EstimatedRideResponseDTO } from 'src/dto/EstimateRideResponseDTO';
 import { EstimateRideRequestDTO } from 'src/dto/EstimateRideRequestDTO';
 import { ConfirmRideRequestDTO } from 'src/dto/ConfirmRideRequestDTO';
+import { Ride } from '@prisma/client';
 
 @Injectable()
 export class RideService {
@@ -36,7 +37,7 @@ export class RideService {
         });
       }
 
-      const estimatedRide = await this.prisma.estimatedRides.create({
+      const estimatedRide = await this.prisma.estimatedRide.create({
         data: {
           customerId: estimateRideDTO.customer_id,
           originLat: response.data.routes[0].legs[0].start_location.lat,
@@ -44,7 +45,7 @@ export class RideService {
           originLng: response.data.routes[0].legs[0].start_location.lng,
           destinationLng: response.data.routes[0].legs[0].end_location.lng,
           distance: response.data.routes[0].legs[0].distance.value,
-          duration: response.data.routes[0].legs[0].duration.value,
+          duration: response.data.routes[0].legs[0].duration.text,
         },
       });
 
@@ -88,11 +89,117 @@ export class RideService {
 
   async confirmRide(@Body() confirmRideDTO: ConfirmRideRequestDTO): Promise<boolean> {
     try {
+
+      const selectedDriver = await this.prisma.driver.findUnique({
+        where: {
+          id: confirmRideDTO.driver.id,
+        },
+      });
+      if (!selectedDriver) {
+        throw new HttpException({
+          error_code: "DRIVER_NOT_FOUND",
+          error_description: "Driver not found",
+          status: HttpStatus.NOT_FOUND
+        }, null);
+      }
       
-      
-      return false;
+      const validDriverDistance = selectedDriver.minDistance <= confirmRideDTO.distance;
+
+      if (!validDriverDistance) {
+        throw new HttpException({
+          error_code: "INVALID_DISTANCE",
+          error_description: "Driver is out of range",
+          status: HttpStatus.NOT_ACCEPTABLE
+        }, null);
+      }
+
+      await this.prisma.ride.create({
+        data: {
+          customerId: confirmRideDTO.customer_id,
+          driverId: confirmRideDTO.driver.id,
+          origin: confirmRideDTO.origin,
+          destination: confirmRideDTO.destination,
+          distance: confirmRideDTO.distance,
+          duration: confirmRideDTO.duration,
+          value: confirmRideDTO.value,
+        },
+      });
+
+      return true;
     } catch (error) {
-      return error
+      if (error.response) {
+        throw new HttpException({
+          error_code: error.response.error_code,
+          error_description: error.response.error_description
+      }, error.response.status);
+      }
+      console.log(error)
+    }
+  }
+
+  async ridesHistory(customerId: string, driverId?: string): Promise<Ride[]> {
+    try {
+
+      if (driverId) {
+        const driverExists = await this.prisma.driver.findUnique({
+          where: {
+            id: Number(driverId)
+          }
+        })
+
+        if (!driverExists) {
+          throw new HttpException({
+            error_code: "INVALID_DRIVER",
+            error_description: "Driver not found",
+            status: HttpStatus.BAD_REQUEST
+          }, null);
+        }
+        
+
+        const rides = await this.prisma.ride.findMany({
+          where: {
+            customerId: {
+              equals: Number(customerId)
+            },
+            driverId: {
+              equals: Number(driverId)
+            }
+          },
+        })
+
+        if (rides.length === 0) {
+          throw new HttpException({
+            error_code: "NO_RIDES_FOUND",
+            error_description: "Rides not found",
+            status: HttpStatus.NOT_FOUND
+          }, null);
+        }
+
+        return rides;
+      }
+      
+      const rides = await this.prisma.ride.findMany({
+        where: {
+          customerId: {
+            equals: Number(customerId)
+          },
+        }
+      })
+
+      if (rides.length === 0) {
+        throw new HttpException({
+          error_code: "NO_RIDES_FOUND",
+          error_description: "Rides not found",
+          status: HttpStatus.NOT_FOUND
+        }, null);
+      }
+
+      return rides;
+    } catch (error) {
+      throw new HttpException({
+        error_code: error.response.error_code,
+        error_description: error.response.error_description
+      }, error.response.status);
     }
   }
 }

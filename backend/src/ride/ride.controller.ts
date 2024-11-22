@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpException, HttpStatus, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
 import { RideService } from './ride.service';
 import { EstimatedRideResponseDTO } from 'src/dto/EstimateRideResponseDTO';
 import { EstimateRideRequestDTO } from 'src/dto/EstimateRideRequestDTO';
@@ -13,7 +13,7 @@ export class RideController {
 
     @Post("estimate")
     @HttpCode(200)
-    async estimateRide(@Body() estimateRide: EstimateRideRequestDTO): Promise<EstimatedRideResponseDTO> {
+    async postRide(@Body() estimateRide: EstimateRideRequestDTO): Promise<EstimatedRideResponseDTO> {
         try {
             estimateRideDataValidation(estimateRide);
             return this.rideService.estimateRide(estimateRide);
@@ -27,15 +27,37 @@ export class RideController {
 
     @Patch("confirm")
     @HttpCode(200)
-    async confirmRide(@Body() confirmRide: ConfirmRideRequestDTO): Promise<any> {
+    async patchRide(@Body() confirmRide: ConfirmRideRequestDTO): Promise<any> {
         try {
             confirmRideDataValidation(confirmRide);
-            return this.rideService.confirmRide(confirmRide);
+            return {
+                success: await this.rideService.confirmRide(confirmRide)
+            };
         } catch (error) {
             throw new HttpException({
                 error_code: error.response.error_code,
                 error_description: error.response.error_description
             }, error.response.status);
+        }
+    }
+
+    @Get(":customer_id")
+    async getRide(@Param("customer_id") customerId: string, @Query("driver_id") driverId?: string): Promise<any> {
+        try {
+            if (Number.isNaN(Number(driverId)) || Number.isNaN(Number(customerId))) {
+                throw new HttpException({
+                    error_code: "INVALID_DATA",
+                    error_description: "Invalid request body data",
+                    status: HttpStatus.BAD_REQUEST
+                  }, null);
+            }
+
+            return this.rideService.ridesHistory(customerId, driverId);
+        } catch (error) {
+            throw new HttpException({
+                error_code: error.response.error_code,
+                error_description: error.response.error_description,
+              }, error.response.status);
         }
     }
 }
