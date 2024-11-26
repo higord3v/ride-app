@@ -9,7 +9,7 @@ COPY . .
 
 RUN npx prisma generate &&npm run build
 
-EXPOSE 3000
+EXPOSE 80
 
 
 CMD ["npm", "run", "start:prod"]
