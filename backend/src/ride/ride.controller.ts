@@ -44,7 +44,15 @@ export class RideController {
     @Get(":customer_id")
     async getRide(@Param("customer_id") customerId: string, @Query("driver_id") driverId?: string): Promise<any> {
         try {
-            if (Number.isNaN(Number(driverId)) || Number.isNaN(Number(customerId))) {
+            const validCustomerId = Number.isNaN(parseInt(customerId));
+            if (validCustomerId) {
+                throw new HttpException({
+                    error_code: "INVALID_DATA",
+                    error_description: "Invalid request body data",
+                    status: HttpStatus.BAD_REQUEST
+                  }, null);
+            }
+            if (driverId && Number.isNaN(Number(driverId))) {
                 throw new HttpException({
                     error_code: "INVALID_DATA",
                     error_description: "Invalid request body data",

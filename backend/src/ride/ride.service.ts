@@ -5,6 +5,7 @@ import { EstimatedRideResponseDTO } from 'src/dto/EstimateRideResponseDTO';
 import { EstimateRideRequestDTO } from 'src/dto/EstimateRideRequestDTO';
 import { ConfirmRideRequestDTO } from 'src/dto/ConfirmRideRequestDTO';
 import { Ride } from '@prisma/client';
+import { RideHistoryResponseDTO } from 'src/dto/RideHistoryResponseDTO';
 
 @Injectable()
 export class RideService {
@@ -137,7 +138,7 @@ export class RideService {
     }
   }
 
-  async ridesHistory(customerId: string, driverId?: string): Promise<Ride[]> {
+  async ridesHistory(customerId: string, driverId?: string): Promise<RideHistoryResponseDTO> {
     try {
 
       if (driverId) {
@@ -174,8 +175,6 @@ export class RideService {
             status: HttpStatus.NOT_FOUND
           }, null);
         }
-
-        return rides;
       }
       
       const rides = await this.prisma.ride.findMany({
@@ -183,7 +182,10 @@ export class RideService {
           customerId: {
             equals: Number(customerId)
           },
-        }
+        },
+        include: {
+          driver: true
+        },
       })
 
       if (rides.length === 0) {
@@ -194,7 +196,24 @@ export class RideService {
         }, null);
       }
 
-      return rides;
+      return {
+        customer_id: Number(customerId),
+        rides: rides.map(r => {
+          return {
+            id: r.id,
+            origin: r.origin,
+            destination: r.destination,
+            date: r.createdAt,
+            distance: r.distance,
+            duration: r.duration,
+            driver: {
+              id: r.driver.id,
+              name: r.driver.name,
+            },
+            value: r.value,
+          }
+        })
+      };
     } catch (error) {
       throw new HttpException({
         error_code: error.response.error_code,
