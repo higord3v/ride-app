@@ -7,7 +7,9 @@ RUN npm install
 
 COPY . .
 
-RUN npx prisma generate &&npm run build
+RUN npx prisma generate && npx prisma migrate dev
+
+RUN npx prisma db seed && npm run build
 
 EXPOSE 80
 
