@@ -1,10 +1,10 @@
 import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
 import { RideService } from './ride.service';
-import { EstimatedRideResponseDTO } from 'src/dto/EstimateRideResponseDTO';
-import { EstimateRideRequestDTO } from 'src/dto/EstimateRideRequestDTO';
-import { ConfirmRideRequestDTO } from 'src/dto/ConfirmRideRequestDTO';
-import { estimateRideDataValidation } from 'src/validators/estimateRideDataValidation';
-import { confirmRideDataValidation } from 'src/validators/confirmRideDataValidation';
+import { EstimatedRideResponseDTO } from '../dto/EstimateRideResponseDTO';
+import { EstimateRideRequestDTO } from '../dto/EstimateRideRequestDTO';
+import { ConfirmRideRequestDTO } from '../dto/ConfirmRideRequestDTO';
+import { estimateRideDataValidation } from '../validators/estimateRideDataValidation';
+import { confirmRideDataValidation } from '../validators/confirmRideDataValidation';
 
 @Controller('ride')
 export class RideController {
@@ -16,8 +16,10 @@ export class RideController {
     async postRide(@Body() estimateRide: EstimateRideRequestDTO): Promise<EstimatedRideResponseDTO> {
         try {
             estimateRideDataValidation(estimateRide);
-            return this.rideService.estimateRide(estimateRide);
+            const estimatedRide = await this.rideService.estimateRide(estimateRide);
+            return estimatedRide;
         } catch (error) {
+            console.log(error)
             throw new HttpException({
                 error_code: error.response.error_code,
                 error_description: error.response.error_description
@@ -30,8 +32,9 @@ export class RideController {
     async patchRide(@Body() confirmRide: ConfirmRideRequestDTO): Promise<any> {
         try {
             confirmRideDataValidation(confirmRide);
+            const result = await this.rideService.confirmRide(confirmRide);
             return {
-                success: await this.rideService.confirmRide(confirmRide)
+                success: result
             };
         } catch (error) {
             throw new HttpException({
@@ -48,14 +51,14 @@ export class RideController {
             if (validCustomerId) {
                 throw new HttpException({
                     error_code: "INVALID_DATA",
-                    error_description: "Invalid request body data",
+                    error_description: "Invalid request parameters",
                     status: HttpStatus.BAD_REQUEST
                   }, null);
             }
             if (driverId && Number.isNaN(Number(driverId))) {
                 throw new HttpException({
-                    error_code: "INVALID_DATA",
-                    error_description: "Invalid request body data",
+                    error_code: "INVALID_DRIVER",
+                    error_description: "Invalid request parameters",
                     status: HttpStatus.BAD_REQUEST
                   }, null);
             }

@@ -30,7 +30,7 @@ export const DriverCard = ({
     let navigate = useNavigate();
     const handleClick = async () => {
         try {
-            const response = await fetch("http://localhost:80/ride/confirm/", {
+            const response = await fetch("http://localhost:8080/ride/confirm/", {
                 method: "PATCH",
                 headers: {
                   "Content-Type": "application/json",
@@ -53,15 +53,17 @@ export const DriverCard = ({
               if (!response.ok) {
                 throw new Error(data.error_description);
               }
-              navigate(`/history/${rideData.id}`);
+              navigate(`/history`);
               toast.success("Corrida solicitada com sucesso");
             } catch (error) {
             toast.error("error");
             console.log(error);
         }
     }
+    
   return (
-      <div className="bg-white p-4 rounded-lg shadow-xl w-96 hover:bg-gray-100">
+      <div className="flex flex-col justify-between bg-white p-4 rounded-lg shadow-xl w-96 hover:bg-gray-100" style={{ height: "350px"}}>
+        <div>
         <h2 className="text-xl font-bold mb-2"><b>Nome: </b> {name}</h2>
         <p className="text-gray-600"><b>Descrição: </b> {description}</p>
         <p className="text-gray-600"><b>Veiculo: </b> {vehicle}</p>
@@ -70,8 +72,8 @@ export const DriverCard = ({
               style: "currency",
               currency: "BRL",
             }).format(value/100000)}</p>
-        <button onClick={handleClick} type="button" className="bg-black hover:bg-gray-900 text-white px-4 py-2 rounded-md mt-4">Escolher</button>
+        </div>
+        <button onClick={handleClick} type="button" className=" w-1/4 bg-black hover:bg-gray-900 text-white px-4 py-2 rounded-md">Escolher</button>
       </div>
-      
   );
 };

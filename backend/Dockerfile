@@ -7,11 +7,11 @@ RUN npm install
 
 COPY . .
 
-RUN npx prisma generate && npx prisma migrate dev
+RUN npx prisma generate && npx prisma migrate dev --name init
 
 RUN npx prisma db seed && npm run build
 
-EXPOSE 80
+EXPOSE 8080
 
 
 CMD ["npm", "run", "start:prod"]

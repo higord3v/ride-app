@@ -16,7 +16,7 @@ export const RideRequest = () => {
     e.preventDefault();
 
     try {
-        const response = await fetch("http://localhost:80/ride/estimate/", {
+        const response = await fetch("http://localhost:8080/ride/estimate/", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -46,9 +46,8 @@ export const RideRequest = () => {
             },
           });
     } catch (error: any) {
-        toast.error(error.message);
+        toast.error("Dados inválidos");
     }
-
   };
 
   return (
@@ -75,7 +74,7 @@ export const RideRequest = () => {
         placeholder="Destino"
         onChange={(e) => setForm({ ...form, destination: e.target.value })}
         />
-      <button type="submit" className="hover:bg-gray-900 bg-black text-white font-bold py-2 px-4 rounded">Enviar</button>
+      <button type="submit" className="hover:bg-gray-900 bg-black text-white font-bold py-2 px-4 rounded">Estimar Corrida</button>
         </form>
     </div>
   );

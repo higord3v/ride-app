@@ -1,11 +1,10 @@
 import { Body, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Client } from "@googlemaps/google-maps-services-js";
-import { EstimatedRideResponseDTO } from 'src/dto/EstimateRideResponseDTO';
-import { EstimateRideRequestDTO } from 'src/dto/EstimateRideRequestDTO';
-import { ConfirmRideRequestDTO } from 'src/dto/ConfirmRideRequestDTO';
-import { Ride } from '@prisma/client';
-import { RideHistoryResponseDTO } from 'src/dto/RideHistoryResponseDTO';
+import { EstimatedRideResponseDTO } from '../dto/EstimateRideResponseDTO';
+import { EstimateRideRequestDTO } from '../dto/EstimateRideRequestDTO';
+import { ConfirmRideRequestDTO } from '../dto/ConfirmRideRequestDTO';
+import { RideHistoryResponseDTO } from '../dto/RideHistoryResponseDTO';
 
 @Injectable()
 export class RideService {
@@ -84,7 +83,12 @@ export class RideService {
         routeResponse: response.data
       }
     } catch (error) {
-      return error.response.data;
+      console.log(error)
+      throw new HttpException({
+        error_code: "INVALID_DATA",
+        error_description: "Invalid request body data",
+        status: HttpStatus.BAD_REQUEST
+      }, HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -97,21 +101,23 @@ export class RideService {
         },
       });
       if (!selectedDriver) {
-        throw new HttpException({
-          error_code: "DRIVER_NOT_FOUND",
-          error_description: "Driver not found",
-          status: HttpStatus.NOT_FOUND
-        }, null);
+        throw new Error("404");
+        // throw new HttpException({
+        //   error_code: "DRIVER_NOT_FOUND",
+        //   error_description: "Driver not found",
+        //   status: HttpStatus.NOT_FOUND
+        // }, HttpStatus.NOT_FOUND);
       }
       
       const validDriverDistance = selectedDriver.minDistance <= confirmRideDTO.distance;
 
       if (!validDriverDistance) {
-        throw new HttpException({
-          error_code: "INVALID_DISTANCE",
-          error_description: "Driver is out of range",
-          status: HttpStatus.NOT_ACCEPTABLE
-        }, null);
+        throw new Error("406");
+        // throw new HttpException({
+        //   error_code: "INVALID_DISTANCE",
+        //   error_description: "Driver is out of range",
+        //   status: HttpStatus.NOT_ACCEPTABLE
+        // }, HttpStatus.NOT_ACCEPTABLE);
       }
 
       await this.prisma.ride.create({
@@ -128,13 +134,26 @@ export class RideService {
 
       return true;
     } catch (error) {
-      if (error.response) {
-        throw new HttpException({
-          error_code: error.response.error_code,
-          error_description: error.response.error_description
-      }, error.response.status);
-      }
       console.log(error)
+      if (error.message === "406") {
+        throw new HttpException({
+          error_code: "INVALID_DISTANCE",
+          error_description: "Driver is out of range",
+          status: HttpStatus.NOT_ACCEPTABLE
+        }, HttpStatus.NOT_ACCEPTABLE);
+      }else if (error.message === "404") {
+        throw new HttpException({
+          error_code: "DRIVER_NOT_FOUND",
+          error_description: "Driver not found",
+          status: HttpStatus.NOT_FOUND
+        }, HttpStatus.NOT_FOUND);
+      }else {
+        throw new HttpException({
+          error_code: "INVALID_DATA",
+          error_description: "Invalid request body data",
+          status: HttpStatus.BAD_REQUEST
+        }, null);
+      }
     }
   }
 
@@ -155,7 +174,6 @@ export class RideService {
             status: HttpStatus.BAD_REQUEST
           }, null);
         }
-        
 
         const rides = await this.prisma.ride.findMany({
           where: {
@@ -166,6 +184,9 @@ export class RideService {
               equals: Number(driverId)
             }
           },
+          include: {
+            driver: true
+          },
         })
 
         if (rides.length === 0) {
@@ -175,6 +196,25 @@ export class RideService {
             status: HttpStatus.NOT_FOUND
           }, null);
         }
+
+        return {
+          customer_id: Number(customerId),
+          rides: rides.map(r => {
+            return {
+              id: r.id,
+              origin: r.origin,
+              destination: r.destination,
+              date: r.createdAt,
+              distance: r.distance,
+              duration: r.duration,
+              driver: {
+                id: r.driver.id,
+                name: r.driver.name,
+              },
+              value: r.value,
+            }
+          })
+        };;
       }
       
       const rides = await this.prisma.ride.findMany({

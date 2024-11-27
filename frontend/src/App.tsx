@@ -7,7 +7,7 @@ function App() {
   useEffect(() => {
     (async () => {
       try {
-        const response = await fetch("http://localhost:80/ride/1");
+        const response = await fetch("http://localhost:8080/ride/1");
         if (response.ok) {
           const data = await response.json()
           setRides(data)
